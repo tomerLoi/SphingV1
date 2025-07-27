@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Start Django Server (venv)",
+			"command": "powershell.exe",
+			"args": [
+				"-NoExit",
+				"-Command",
+				".\\.venv\\Scripts\\Activate.ps1; cd C:\\Users\\TOMER\\Documents\\SphingV1; python manage.py runserver 8000"
+			],
+			"group": "build",
+			"isBackground": true
+		},
+		{
+			"type": "shell",
+			"label": "Start React App",
+			"command": "powershell.exe",
+			"args": [
+				"-NoExit",
+				"-Command",
+				"cd C:\\Users\\TOMER\\Documents\\SphingV1\\client; npm start"
+			],
+			"group": "build",
+			"isBackground": true
+		}
+	]
+}

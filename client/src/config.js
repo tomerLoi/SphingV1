@@ -1,7 +1,7 @@
 // src/config.js
 const CONFIG = {
-  API_URL: "http://192.168.1.104:8000",
   APP_NAME: "SpHing",
+  API_URL: "http://localhost:8000",
   // other global vars
 };
 
