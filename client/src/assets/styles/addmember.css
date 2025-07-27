@@ -1,0 +1,205 @@
+:root {
+  --main-bg: #181A1B;
+  --card-bg: #232629;
+  --primary: #e3342f;
+  --input-bg: #2b2d33;  /* Uniform dark-gray for inputs */
+  --text: #fff;
+  --radius: 1rem;
+  --gap: 1rem;
+  --transition: 0.2s;
+}
+
+/* --- PAGE BASE --- */
+body, .add-member-page {
+  background: var(--main-bg);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.add-member-page {
+  padding-top: 4rem;
+  position: relative;
+}
+
+/* --- HEADER --- */
+.header-sticky-row {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  width: 100vw;
+  height: 68px;
+  background: var(--main-bg);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  box-sizing: border-box;
+  box-shadow: 0 3px 16px #0003;
+}
+.header-logo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.header-actions {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.back-to-dashboard-btn {
+  background: #222;
+  color: #fff;
+  border: none;
+  padding: 0.70rem 1.3rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  font-size: 1.08rem;
+  cursor: pointer;
+  transition: background var(--transition);
+  margin-left: 0.6rem;
+  margin-top: 0.18rem;
+}
+.back-to-dashboard-btn:hover {
+  background: #444;
+}
+
+/* --- FORM --- */
+.add-member-form {
+  background: #222;
+  padding: 2rem;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 400px;
+  margin: 7rem auto 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  color: #fff;
+  box-shadow: 0 2px 24px #000a;
+}
+
+.add-member-form h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Labels */
+.add-member-form label {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  font-size: 0.95rem;
+}
+
+/* Inputs and selects */
+.add-member-form input,
+.add-member-form select {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #3a3d44;
+  background: var(--input-bg);
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+/* Placeholder color */
+.add-member-form input::placeholder {
+  color: #ccc;
+  opacity: 1;
+}
+
+/* Dropdown arrow style */
+.add-member-form select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px 8px;
+  padding-right: 2rem;
+}
+
+.add-member-form .error {
+  color: var(--primary);
+  text-align: center;
+}
+
+/* Submit button */
+.add-member-form button[type="submit"] {
+  background: var(--primary);
+  color: #fff;
+  font-weight: bold;
+  padding: 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.add-member-form button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 900px) {
+  .add-member-form {
+    max-width: 95vw;
+    padding: 1.3rem;
+  }
+  .header-sticky-row {
+    padding: 0 1rem;
+    height: 54px;
+  }
+}
+@media (max-width: 600px) {
+  .add-member-form {
+    margin-top: 5rem;
+    padding: 1rem;
+  }
+}
+/* Force input and select to have consistent dark-gray background */
+.add-member-form input,
+.add-member-form select {
+  background: #2b2d33;       /* Dark gray (no blue tint) */
+  color: #fff;               /* White text */
+  border: 1px solid #3a3d44; /* Subtle border for visibility */
+}
+
+/* Placeholder text color to white */
+.add-member-form input::placeholder {
+  color: #ccc;               /* Light gray placeholder */
+  opacity: 1;                /* Ensure it's visible */
+}
+
+/* Dropdown arrow color fix for select (for Chrome/Webkit) */
+.add-member-form select {
+  -webkit-appearance: none;  /* Remove default styles */
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px 8px;
+  padding-right: 2rem;
+}
+.dropdown-field {
+  background: #2b2d33;
+  color: #fff;
+  border: 1px solid #3a3d44;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  cursor: pointer;
+  transition: border 0.2s;
+}
+
+.dropdown-field:focus {
+  border-color: var(--primary);
+}

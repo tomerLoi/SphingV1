@@ -1,0 +1,157 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Navbar: single row, timer as circle, logo at top left */
+.navbar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto; /* Logo | Timer | Alerts | Buttons */
+  align-items: start;         /* Align all items to the top */
+  gap: 32px;
+  background: #181a1b;
+  box-sizing: border-box;
+  min-height: 90px;           /* Tall enough for circular timer */
+  position: relative;
+  z-index: 100;
+  padding: 0 32px 0 0;        /* Padding only on the right */
+}
+
+/* Logo: flush left and top */
+.navbar-logo {
+  margin-top:13px ;
+  padding: 13px;
+}
+
+/* Timer: perfect circle, centered between logo and alerts */
+.navbar-timer {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  min-height: 80px;
+  color: #fff;
+  border-radius: 50%;         /* Circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Fira Mono", "Roboto Mono", "monospace";
+  font-weight: 700;
+  font-size: 2.4em;
+  margin: 0 auto;             /* Center inside its column */
+  position: relative;
+  margin-top: 18px;
+}
+
+/* Alerts block: centered in navbar */
+.navbar-alerts {
+  margin: 0;
+  justify-self: center;        /* Center the alerts block in the grid */
+  min-width: 260px;
+  background:  #232629;
+  border-radius: 16px;
+  padding: 8px 32px 8px 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 6px 18px #0006;
+  margin-top: 18px;
+}
+
+/* Single alert row */
+.navbar-alert-msg {
+  color: #ffb700;
+  margin-bottom: 2px;
+  font-size: 1.2em;
+  display: flex;
+  align-items: center;
+}
+.alert-time {
+  color: #fff;
+  background: #232629;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 1em;
+  margin-right: 10px;
+  font-weight: 700;
+}
+.alert-msg {
+  margin-left: 3px;
+  font-size: 1.08em;
+}
+.alert-critical {
+  color: #e32840;
+}
+.alert-warning {
+  color: #ffb700;
+}
+
+/* Buttons: aligned right */
+.navbar-buttons {
+  display: flex;
+  gap: 13px;
+  margin-left: 0;
+  margin-top: 40px;
+}
+.navbar-buttons button {
+  background: #232629;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1.06em;
+  padding: 7px 13px;
+  border: none;
+  margin-right: 0;
+  cursor: pointer;
+  transition: background 0.2s, color 0.18s;
+  font-weight: 500;
+  outline: none;
+}
+.navbar-refresh {
+  background: #e32840 !important;
+  color: #fff !important;
+  font-weight: bold;
+}
+.navbar-buttons button:hover {
+  background: #33383b;
+}
+.navbar-refresh:hover {
+  background: #b71627 !important;
+}
+.sphing-logo-img {
+  width: 210px;          /* אפשר לשנות לפי מה שנראה טוב */
+  height: auto;
+  display: block;
+  margin-top: 0px;
+  margin-bottom: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px #e3284040);  /* אופציונלי: מוסיף glow עדין */
+}
+/* Navbar: now 2 columns - Logo (left) | Buttons (right) */
+.navbar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;  /* Left = logo, Right = buttons */
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  background: #181a1b;
+  box-sizing: border-box;
+  min-height: 90px;
+  padding: 0 32px;
+  position: relative;
+  z-index: 100;
+}
+
+/* Remove old circular timer */
+.navbar-timer {
+  display: none;
+}
+
+/* Buttons all aligned right */
+.navbar-buttons {
+  display: flex;
+  justify-content: flex-end;  /* Push all buttons to the right */
+  align-items: center;
+  gap: 13px;
+  margin-top: 0; /* Remove the top offset */
+}
+
