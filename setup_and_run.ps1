@@ -29,8 +29,9 @@ python --version
 node --version
 npm --version
 
-# Activate venv and start Django server
-Start-Process powershell -ArgumentList '-NoExit', '-Command', '. .\.venv\Scripts\Activate.ps1; python manage.py runserver 8000' -WorkingDirectory $PSScriptRoot
+
+# Activate venv, install requirements, and start Django server
+Start-Process powershell -ArgumentList '-NoExit', '-Command', '. .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt; python manage.py runserver 8000' -WorkingDirectory $PSScriptRoot
 
 # Start React app in client folder
 Start-Process powershell -ArgumentList '-NoExit', '-Command', 'npm start' -WorkingDirectory "$PSScriptRoot\client"
