@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import SiteList from "../components/SiteList/SiteList";
 import "../assets/styles/dashboard.css";
@@ -7,17 +6,16 @@ import "../assets/styles/global.css";
 import "../assets/styles/navbar.css";
 import CONFIG from "../config";
 
-const POLL_INTERVAL_SEC = 10; // Poll every 10 seconds
+const POLL_INTERVAL_SEC = 10; // How many seconds between each poll
 
 export default function Dashboard({ onLogout }) {
-  const navigate = useNavigate();
   const [sitesData, setSitesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [countdown, setCountdown] = useState(POLL_INTERVAL_SEC);
   const intervalRef = useRef();
 
-  // Fetch sites function (extracted to call on-demand)
+  // Fetch sites from the backend API
   async function fetchSites(showLoading = true) {
     if (showLoading) setLoading(true);
     try {
@@ -33,19 +31,17 @@ export default function Dashboard({ onLogout }) {
     }
   }
 
-  // First load
+  // Initial load and polling logic
   useEffect(() => {
     fetchSites();
   }, []);
 
-  // Polling logic
   useEffect(() => {
-    // Start countdown
     intervalRef.current = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
-          fetchSites(false); // No spinner on background refresh
-          return POLL_INTERVAL_SEC; // Reset counter after fetching
+          fetchSites(false); // Background refresh, no spinner
+          return POLL_INTERVAL_SEC;
         }
         return prev - 1;
       });
@@ -54,23 +50,23 @@ export default function Dashboard({ onLogout }) {
     return () => clearInterval(intervalRef.current);
   }, []);
 
+  // Manual refresh handler for Refresh button
+  function handleManualRefresh() {
+    setCountdown(POLL_INTERVAL_SEC); // Reset timer to 10
+    fetchSites(); // Fetch data with loading spinner
+  }
+
   if (loading) return <div className="dashboard-main">Loading...</div>;
   if (error) return <div className="dashboard-main">Error: {error}</div>;
 
   return (
     <div>
-      <Navbar onLogout={onLogout} />
+      <Navbar
+        onLogout={onLogout}
+        seconds={countdown}
+        onRefreshClick={handleManualRefresh}
+      />
       <div className="dashboard-main">
-        {/* Countdown visual, can be styled */}
-        <div style={{ 
-          fontSize: 14, 
-          color: "#BFC2C5", 
-          position: "absolute", 
-          top: 24, 
-          right: 32 
-        }}>
-          Refreshing in <b>{countdown}</b>s
-        </div>
         <div className="dashboard-sites-container-crowd">
           {sitesData.map((col) => (
             <SiteList

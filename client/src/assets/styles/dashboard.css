@@ -1,7 +1,7 @@
 :root {
   --background-dark: #181A1B;
   --dashboard-card: #212225;
-  --row-bg: #232629;            /* טון בהיר יותר מהדשבורד */
+  --row-bg: #232629;
   --highlight-red: #E71D32;
   --border-red: #E71D32;
   --border-orange: #FFA300;
@@ -10,7 +10,9 @@
   --font-family: 'Inter', Arial, sans-serif;
 }
 
-/* MAIN DASHBOARD */
+/* ===================
+   MAIN DASHBOARD LAYOUT
+   =================== */
 .dashboard-main {
   width: 100vw;
   min-height: 100vh;
@@ -41,7 +43,32 @@
   }
 }
 
-/* CONTINENT BLOCK */
+/* ===================
+   CONTINENT COLUMN & TITLE
+   =================== */
+.continent-column-crowd {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 260px;
+}
+
+.continent-title-crowd {
+  font-size: 1.4em;
+  font-weight: 800;
+  color: #e3e3e3;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding-left: 3px;
+  padding-bottom: 2px;
+  background: transparent;
+  border-bottom: none !important; /* Make sure no line appears */
+}
+
+/* ===================
+   CONTINENT CARD
+   =================== */
 .dashboard-continent {
   background: var(--dashboard-card);
   border-radius: 22px;
@@ -51,26 +78,19 @@
   flex-direction: column;
   min-width: 260px;
 }
-.continent-title-crowd {
-  font-size: 1.4em;
-  font-weight: 800;
-  color: #e3e3e3;
-  margin-bottom: 12px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding-left: 3px;
-  border-bottom: 2px solid #222326;
-  padding-bottom: 4px;
-}
 
-/* SITES LIST */
+/* ===================
+   SITES LIST
+   =================== */
 .site-list-crowd {
   display: flex;
   flex-direction: column;
   gap: 13px;
 }
 
-/* SITE ROW */
+/* ===================
+   SITE ROW
+   =================== */
 .site-row {
   background: var(--row-bg);
   border-radius: 13px;
@@ -92,7 +112,9 @@
   border-color: var(--border-red);
 }
 
-/* SITE NAME */
+/* ===================
+   SITE NAME
+   =================== */
 .site-name {
   flex: 1;
   letter-spacing: 0.6px;
@@ -100,7 +122,9 @@
   font-weight: 800;
 }
 
-/* STATUS DOTS */
+/* ===================
+   STATUS DOTS
+   =================== */
 .site-dots {
   display: flex;
   gap: 8px;
@@ -123,6 +147,9 @@
   outline: 2px solid #fff;
 }
 
+/* ===================
+   RESPONSIVE
+   =================== */
 @media (max-width: 600px) {
   .dashboard-continent {
     min-width: unset;

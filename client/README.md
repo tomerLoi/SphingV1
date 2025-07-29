@@ -1,3 +1,81 @@
+client/
+├── public/
+├── src/
+│   ├── api/
+│   │   ├── alerts.js       
+│   │   ├── auth.js           
+│   │   ├── members.js       
+│   │   ├── profile.js        
+│   │   └── sites.js         
+│   ├── assets/
+│   │   ├── images/
+│   │   │   └── sphing_logo.png
+│   │   └── styles/
+│   │       ├── addmember.css
+│   │       ├── alerts.css
+│   │       ├── dashboard.css
+│   │       ├── global.css
+│   │       ├── login.css
+│   │       ├── navbar.css
+│   │       ├── siteform.css
+│   │       └── teammembers.css
+│   ├── components/
+│   │   ├── AddMemberForm/
+│   │   │   └── AddMemberForm.jsx
+│   │   ├── AddSiteForm/
+│   │   │   └── AddSiteForm.jsx
+│   │   ├── Alerts/
+│   │   │   ├── AlertDropdown.jsx
+│   │   │   ├── AlertList.jsx
+│   │   │   └── AlertsSidebar.jsx
+│   │   ├── EditSiteForm/
+│   │   │   └── EditSiteForm.jsx
+│   │   ├── LoginForm/
+│   │   │   └── LoginForm.jsx
+│   │   ├── MemberForm/
+│   │   │   └── MemberForm.jsx
+│   │   ├── MemberTable/
+│   │   │   └── MemberTable.jsx
+│   │   ├── Navbar/
+│   │   │   └── Navbar.jsx
+│   │   ├── PingStatus/
+│   │   │   └── PingStatus.jsx
+│   │   ├── PortalMenu/
+│   │   │   ├── PortalMenu.jsx
+│   │   ├── SiteCard/
+│   │   │   └── SiteCard.jsx
+│   │   ├── SiteForm/
+│   │   │   └── SiteForm.jsx
+│   │   ├── SiteList/
+│   │   │   ├── SiteList.jsx
+│   │   │   └── SiteRow.jsx
+│   │   ├── TeamTable/
+│   │   │   └── TeamTable.jsx
+│   │   └── PrivateRoute.jsx
+│   ├── pages/
+│   │   ├── AddMember.jsx
+│   │   ├── AddSite.jsx
+│   │   ├── Alerts.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── EditSite.jsx
+│   │   ├── Login.jsx
+│   │   ├── ProfilePage.jsx
+│   │   └── TeamMembers.jsx
+│   ├── utils/              
+│   ├── App.css
+│   ├── App.jsx
+│   ├── App.test.js
+│   ├── config.js
+│   ├── index.css
+│   ├── index.js
+│   ├── logo.svg
+│   ├── reportWebVitals.js
+│   └── setupTests.js
+├── package.json
+└── README.md
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

@@ -1,11 +1,13 @@
+// src/pages/EditSite.jsx
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import logo from "../assets/images/sphing_logo.png";
 import CONFIG from "../config";
 import EditSiteForm from "../components/EditSiteForm/EditSiteForm";
-import "../assets/styles/addmember.css"; // Reuse sticky header + button styling
-import "../assets/styles/siteform.css";  // Keep for card or page-specific styling
+import "../assets/styles/addmember.css"; // Sticky header/button styles
+import "../assets/styles/siteform.css";  // Card/page-specific styles
 
 const palette = {
   background: "#181A1B",
@@ -35,7 +37,7 @@ const cardStyle = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  position: "relative", // נדרש כדי למקם את כפתור המחיקה בפנים
+  position: "relative", // Needed for delete button inside
 };
 
 const cardTitle = {
@@ -61,7 +63,7 @@ const searchSelectStyle = {
   color: palette.text,
 };
 
-// עיצוב כפתור מחיקה
+// Delete button (trash) style
 const deleteBtnStyle = {
   position: "absolute",
   top: 16,
@@ -78,7 +80,7 @@ const deleteBtnStyle = {
   transition: "background 0.2s ease",
 };
 
-// אייקון פח אשפה לבן
+// Simple white trash icon
 const trashIcon = (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -100,6 +102,11 @@ export default function EditSite() {
   const [selectedOption, setSelectedOption] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Modal state for deletion
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Load all sites for the select dropdown
   useEffect(() => {
     async function fetchSites() {
       setLoading(true);
@@ -108,6 +115,7 @@ export default function EditSite() {
         if (!res.ok) throw new Error("Failed to fetch sites data");
         const data = await res.json();
 
+        // Flatten sites by continent
         let flatSites = [];
         data.forEach(continent =>
           continent.sites.forEach(site =>
@@ -128,15 +136,18 @@ export default function EditSite() {
     fetchSites();
   }, []);
 
+  // Options for react-select
   const siteOptions = sitesData.map(site => ({
     value: site.site_id,
     label: `${site.site_name}${site.continent ? " (" + site.continent + ")" : ""}`,
   }));
 
+  // Find selected site data by ID
   const selectedSiteData =
     selectedOption &&
     sitesData.find(s => String(s.site_id) === String(selectedOption.value));
 
+  // Save site changes handler
   async function handleSave(updatedSite) {
     setSaveLoading(true);
     setSuccessMsg("");
@@ -159,14 +170,10 @@ export default function EditSite() {
     }
   }
 
-  // פעולה למחיקת אתר
+  // Handle site deletion with modal confirmation
   async function handleDelete() {
     if (!selectedSiteData) return;
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${selectedSiteData.site_name}"?`
-    );
-    if (!confirmDelete) return;
-
+    setDeleteLoading(true);
     try {
       const res = await fetch(
         `${CONFIG.API_URL}/api/sites/${selectedSiteData.site_id}/`,
@@ -174,17 +181,20 @@ export default function EditSite() {
       );
       if (!res.ok) throw new Error("Failed to delete site");
 
-      alert("Site deleted successfully!");
       setSitesData(prev => prev.filter(s => s.site_id !== selectedSiteData.site_id));
       setSelectedOption(null);
+      setShowDeleteModal(false);
+      // Optional: show a toast notification here
     } catch (err) {
       alert(err.message || "Unknown error");
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
   return (
     <div style={pageWrapper}>
-      {/* Sticky header bar - same style as TeamMembers/AddSite */}
+      {/* Sticky header bar */}
       <div className="header-sticky-row">
         <div className="header-logo">
           <img
@@ -207,11 +217,76 @@ export default function EditSite() {
         </div>
       </div>
 
+      {/* Delete confirmation modal */}
+      {showDeleteModal && selectedSiteData && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#232629",
+              borderRadius: 18,
+              padding: "38px 36px 32px 36px",
+              minWidth: 350,
+              boxShadow: "0 4px 40px #000a",
+              color: "#fff"
+            }}
+          >
+            <h3 style={{ fontSize: 24, margin: 0, marginBottom: 14, fontWeight: 800 }}>Delete Site</h3>
+            <p style={{ fontSize: 18, margin: "22px 0 32px 0" }}>
+              Are you sure you want to delete <b>{selectedSiteData.site_name}</b>?
+            </p>
+            <div style={{ display: "flex", gap: 18, justifyContent: "right" }}>
+              <button
+                className="modal-btn cancel"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteLoading}
+                style={{
+                  background: "#3a3c3e",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 17,
+                  borderRadius: 11,
+                  border: "none",
+                  padding: "8px 28px",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  transition: "background 0.15s"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                style={{
+                  background: "#e32840",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 17,
+                  borderRadius: 11,
+                  border: "none",
+                  padding: "8px 28px",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  transition: "background 0.15s"
+                }}
+              >
+                {deleteLoading ? "Deleting..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Site content card */}
       <div style={cardStyle}>
-        {/* כפתור מחיקה - יוצג רק אם נבחר אתר */}
+        {/* Show delete button only when a site is selected */}
         {selectedSiteData && (
-          <button style={deleteBtnStyle} onClick={handleDelete} title="Delete Site">
+          <button
+            style={deleteBtnStyle}
+            onClick={() => setShowDeleteModal(true)}
+            title="Delete Site"
+          >
             {trashIcon}
           </button>
         )}

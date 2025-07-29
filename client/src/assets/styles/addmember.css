@@ -203,3 +203,75 @@ body, .add-member-page {
 .dropdown-field:focus {
   border-color: var(--primary);
 }
+/* --- MODAL OVERLAY + CONTENT --- */
+.modal-overlay {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  background: rgba(0,0,0,0.54);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.17s;
+}
+
+.modal-content {
+  background: var(--card-bg, #232629);
+  color: #fff;
+  border-radius: 1.1rem;
+  padding: 38px 36px 32px 36px;
+  min-width: 350px;
+  max-width: 96vw;
+  box-shadow: 0 4px 40px #000a;
+  position: relative;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .modal-content {
+    min-width: 70vw;
+    padding: 26px 8vw 22px 8vw;
+  }
+}
+
+/* --- MODAL BUTTONS --- */
+.modal-actions {
+  display: flex;
+  gap: 18px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.modal-btn {
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-radius: 0.7rem;
+  border: none;
+  padding: 8px 28px;
+  cursor: pointer;
+  transition: background 0.15s;
+  outline: none;
+}
+
+.modal-btn.cancel {
+  background: #3a3d3f;
+  color: #fff;
+}
+
+.modal-btn.cancel:hover {
+  background: #44484b;
+}
+
+.modal-btn.confirm {
+  background: var(--primary, #e3342f);
+  color: #fff;
+}
+
+.modal-btn.confirm:hover:enabled {
+  background: #b71b1b;
+}
+
+.modal-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

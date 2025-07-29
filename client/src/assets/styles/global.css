@@ -38,3 +38,35 @@ html, body, #root {
     opacity: 0;
   }
 }
+/* ===== Custom Scrollbar Style for the Entire App ===== */
+
+/* Main scrollbar style (Chrome, Edge, Opera) */
+::-webkit-scrollbar {
+  width: 6px;                /* Thin scrollbar */
+  background: transparent;   /* Transparent background for minimalist look */
+  border-radius: 8px;
+}
+
+/* The draggable "thumb" part of the scrollbar */
+::-webkit-scrollbar-thumb {
+  background: #232629;       /* Thumb color (matches card/row background) */
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+/* Thumb color on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #33383b;       /* Slightly lighter thumb on hover */
+}
+
+/* Track (the area behind the thumb) */
+::-webkit-scrollbar-track {
+  background: #181a1b;       /* Matches main app background */
+  border-radius: 8px;
+}
+
+/* ===== Firefox Custom Scrollbar ===== */
+html {
+  scrollbar-color: #232629 #181a1b;  /* thumb, track */
+  scrollbar-width: thin;
+}

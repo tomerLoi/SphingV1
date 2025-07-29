@@ -7,6 +7,8 @@ import TeamMembers from "./pages/TeamMembers";
 import AddMember from "./pages/AddMember";
 import EditSite from "./pages/EditSite"; // <-- Added!
 import PrivateRoute from "./components/PrivateRoute";
+import ProfilePage from "./pages/ProfilePage";
+
 
 // Helper to check token in sessionStorage
 function checkToken() {
@@ -59,6 +61,7 @@ function App() {
         <Route path="/edit-site" element={<PrivateRoute><EditSite /></PrivateRoute>} /> {/* <-- Added! */}
         <Route path="/team-members" element={<PrivateRoute><TeamMembers /></PrivateRoute>} />
         <Route path="/add-member" element={<PrivateRoute><AddMember /></PrivateRoute>} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
