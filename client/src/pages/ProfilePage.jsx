@@ -75,28 +75,12 @@ export default function ProfilePage() {
       setLoading(true);
       setError("");
       try {
-        // Fetch all locations for dropdown
-        const locationsList = await getLocations();
-        setAllLocations(
-          locationsList.map((loc) => ({
-            value: loc.id,
-            label: loc.name,
-          }))
-        );
-
         // Fetch user profile details
         const data = await getProfile();
         setForm({
           full_name: data.full_name || "",
           email: data.email || "",
           phone: data.phone || "",
-          role: data.role || "",
-          locations: Array.isArray(data.locations)
-            ? data.locations.map((loc) => ({
-                value: loc.id,
-                label: loc.name,
-              }))
-            : [],
           password: "",
         });
       } catch (e) {
@@ -135,9 +119,8 @@ export default function ProfilePage() {
       // Prepare the update payload
       const updatePayload = {
         full_name: form.full_name,
-        phone: form.phone,
-        locations: form.locations.map((loc) => loc.value),
-      };
+        email: form.email,
+        phone: form.phone,      };
       if (form.password && form.password.length > 0) {
         updatePayload.password = form.password;
       }
@@ -230,32 +213,6 @@ export default function ProfilePage() {
                   value={form.phone}
                   onChange={handleChange}
                   style={inputStyle}
-                />
-              </label>
-              {/* Locations - multi select dropdown */}
-              <label style={labelStyle}>
-                Locations
-                <Select
-                  isMulti
-                  isSearchable
-                  name="locations"
-                  value={form.locations}
-                  onChange={handleLocationsChange}
-                  options={allLocations}
-                  placeholder="Select locations..."
-                  styles={selectDarkStyles}
-                  noOptionsMessage={() => "No locations found"}
-                />
-              </label>
-              {/* Role (readonly) */}
-              <label style={labelStyle}>
-                Role
-                <input
-                  type="text"
-                  name="role"
-                  value={form.role}
-                  style={inputStyle}
-                  disabled
                 />
               </label>
               {/* Password with show/hide */}
