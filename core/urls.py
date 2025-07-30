@@ -16,4 +16,5 @@ urlpatterns = [
     path('alerts/', LogListView.as_view(), name='log-list'),
     path('locations/', views.LocationListView.as_view(), name='location-list'),
     path('continents/', views.ContinentListView.as_view(), name='continent-list'),
+    path('profile/', views.UserProfileView.as_view(), name='user-profile'),
 ]

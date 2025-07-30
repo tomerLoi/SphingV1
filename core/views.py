@@ -1,3 +1,4 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Location
@@ -464,3 +465,42 @@ class ContinentListView(APIView):
         end_time = time.time()
         print(f"ContinentListView GET processing time: {end_time - start_time:.2f} seconds")
         return resp
+    
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        print(user)
+        try:
+            try:
+                profile = ITMember.objects.filter(full_name=user).first()
+                print(profile)
+            except profile.DoesNotExist:
+                return Response({'error': 'User profile not found'}, status=404)
+            print(profile.phone_number)
+            data = {
+                'full_name': profile.full_name,
+                'email': profile.email,
+                'phone': profile.phone_number,
+            }
+            return Response(data, status=200)
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'User profile not found'}, status=404)
+
+    def put(self, request):
+        user = request.user
+        data = request.data
+        try:
+            profile = ITMember.objects.get(full_name=user)
+            profile.full_name = data.get('full_name', profile.full_name)
+            profile.email = data.get('email', profile.email)
+            profile.phone_number = data.get('phone', profile.phone_number)
+            profile.password = data.get('password')
+            if profile.password:
+                user.set_password(profile.password)
+                user.save()
+            profile.save()
+            return Response({'message': 'Profile updated successfully'}, status=200)
+        except ITMember.DoesNotExist:
+            return Response({'error': 'User profile not found'}, status=404)

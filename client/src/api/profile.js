@@ -7,7 +7,7 @@ import CONFIG from "../config";
  * @returns {Promise<Object>} User profile object.
  */
 export async function getProfile() {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("auth_token");
   const res = await fetch(`${CONFIG.API_URL}/api/profile/`, {
     headers: {
       "Authorization": `Bearer ${token}`,
@@ -26,7 +26,7 @@ export async function getProfile() {
  * @returns {Promise<Object>} Updated user profile object.
  */
 export async function updateProfile(data) {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("auth_token");
   const res = await fetch(`${CONFIG.API_URL}/api/profile/`, {
     method: "PUT",
     headers: {

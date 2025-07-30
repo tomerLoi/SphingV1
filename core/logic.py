@@ -8,40 +8,34 @@ from .models import *
 
 
 
-def start_concurrent_pings(ip_addresses, count=1, timeout=1000, wait_time=5):
+def start_concurrent_pings(ip_addresses, count=1, timeout=1000):
     """
-    Starts a background thread for each IP address to continuously ping them concurrently every 10 seconds.
-    Waits for a specified time before returning the initial results.
-    Returns a dictionary with IP addresses as keys and their latest ping results as values.
+    Starts a background thread for each IP address to continuously ping them concurrently.
+    Updates ISP activity levels after all pings are completed.
+    Runs periodic tasks every 10 seconds.
     """
     ping_results = {ip: None for ip in ip_addresses}
 
-    def ping_loop(ip_address):
+    def ping_and_update():
         while True:
-            reachable = ping_ip(ip_address, count, timeout)
-            ping_results[ip_address] = reachable
-            time.sleep(10)
+            # Ping all IPs and update activity levels
+            for ip_address in ip_addresses:
+                reachable = ping_ip(ip_address, count, timeout)
+                ping_results[ip_address] = reachable
+            time.sleep(120)
+            update_isp_activity_level(ping_results)
 
-    # Start threads for each IP address
-    for ip_address in ip_addresses:
-        thread = threading.Thread(target=ping_loop, args=(ip_address,), daemon=True)
-        thread.start()
-
-    # Allow some time for threads to perform initial pings
-    time.sleep(wait_time)
-
-    # Start a background thread for periodic updates and monitoring
-    def periodic_updates():
-        while True:
-            if all(result is not None for result in ping_results.values()):
-                update_isp_activity_level(ping_results)
+            # Run periodic tasks
             monitor_isp_connectivity()
             delete_false_alerts()
             check_round_of_three_alerts()
-            time.sleep(10)  # Wait before the next round of updates
 
-    monitoring_thread = threading.Thread(target=periodic_updates, daemon=True)
-    monitoring_thread.start()
+            # Wait 10 seconds before the next iteration
+            time.sleep(10)
+
+    # Start a single thread to handle all pings and periodic tasks
+    thread = threading.Thread(target=ping_and_update, daemon=True)
+    thread.start()
 
     return ping_results
 

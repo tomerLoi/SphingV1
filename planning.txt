@@ -1,0 +1,8 @@
+ run in the background
+the system should ping every isp concurrentlly using a the threads in the.
+one all the pings are completed make sure to update the isp activity level.
+
+once every 10 seonds run
+monitor_isp_connectivity()
+delete_false_alerts()
+check_round_of_three_alerts()
