@@ -5,12 +5,11 @@ import Dashboard from "./pages/Dashboard";
 import AddSite from "./pages/AddSite";
 import TeamMembers from "./pages/TeamMembers";
 import AddMember from "./pages/AddMember";
-import EditSite from "./pages/EditSite"; // <-- Added!
+import EditSite from "./pages/EditSite";
+import SiteManage from "./pages/SiteManage"; // <-- החדש!
 import PrivateRoute from "./components/PrivateRoute";
 import ProfilePage from "./pages/ProfilePage";
 
-
-// Helper to check token in sessionStorage
 function checkToken() {
   return !!sessionStorage.getItem("auth_token");
 }
@@ -18,16 +17,12 @@ function checkToken() {
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(checkToken());
 
-  // Update login state when sessionStorage changes
   useEffect(() => {
-    const onStorage = () => {
-      setIsLoggedIn(checkToken());
-    };
+    const onStorage = () => setIsLoggedIn(checkToken());
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Update login state after login/logout
   const handleLogin = () => setIsLoggedIn(true);
   const handleLogout = () => {
     sessionStorage.removeItem("auth_token");
@@ -45,22 +40,13 @@ function App() {
               : <Login setIsLoggedIn={handleLogin} />
           }
         />
-        <Route
-          path="/"
-          element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />}
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <Dashboard onLogout={handleLogout} />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/" element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />} />
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard onLogout={handleLogout} /></PrivateRoute>} />
         <Route path="/add-site" element={<PrivateRoute><AddSite /></PrivateRoute>} />
-        <Route path="/edit-site" element={<PrivateRoute><EditSite /></PrivateRoute>} /> {/* <-- Added! */}
+        <Route path="/edit-site" element={<PrivateRoute><EditSite /></PrivateRoute>} />
         <Route path="/team-members" element={<PrivateRoute><TeamMembers /></PrivateRoute>} />
         <Route path="/add-member" element={<PrivateRoute><AddMember /></PrivateRoute>} />
+        <Route path="/site-manage" element={<PrivateRoute><SiteManage /></PrivateRoute>} /> {/* <-- החדש */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

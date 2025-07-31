@@ -48,7 +48,8 @@ SPHINGV1/
 │       │   ├── SiteCard/
 │       │   │   └── SiteCard.jsx
 │       │   ├── SiteForm/
-│       │   │   └── SiteForm.jsx
+│       │   │   ├── SiteForm.jsx
+│       │   │   └── EditSiteTab.jsx
 │       │   ├── SiteList/
 │       │   │   ├── SiteList.jsx
 │       │   │   └── SiteRow.jsx
@@ -63,6 +64,7 @@ SPHINGV1/
 │       │   ├── EditSite.jsx
 │       │   ├── Login.jsx
 │       │   ├── ProfilePage.jsx
+│       │   ├── SiteManage.jsx
 │       │   └── TeamMembers.jsx
 │       ├── utils/
 │       ├── App.css
