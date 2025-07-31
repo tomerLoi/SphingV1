@@ -15,17 +15,17 @@ const TeamMembers = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // GET members & locations
+  // Fetch all members & locations
   const fetchMembers = async () => {
     setLoading(true);
     try {
       const data = await getMembers();
       if (Array.isArray(data) && data.length > 0) {
-        const allButLast = data.slice(0, -1); // החברים עצמם
-        const lastItem = data[data.length - 1]; // אובייקט הלוקיישנים
+        const allButLast = data.slice(0, -1); // All members (except locations object)
+        const lastItem = data[data.length - 1]; // Locations object
         setMembers(allButLast);
         setFilteredMembers(allButLast);
-        // המרה לאופציות עבור הדרופדאון
+        // Prepare dropdown options for locations
         if (lastItem.all_locations && Array.isArray(lastItem.all_locations)) {
           setLocations(
             lastItem.all_locations.map((loc) => ({
@@ -33,7 +33,9 @@ const TeamMembers = () => {
               label: loc.site_name,
             }))
           );
-        } else setLocations([]);
+        } else {
+          setLocations([]);
+        }
       } else {
         setMembers([]);
         setFilteredMembers([]);
@@ -52,7 +54,7 @@ const TeamMembers = () => {
     fetchMembers();
   }, []);
 
-  // סינון חיפוש
+  // Filter members by search input (case-insensitive)
   useEffect(() => {
     if (!search.trim()) {
       setFilteredMembers(members);
@@ -81,7 +83,7 @@ const TeamMembers = () => {
 
   return (
     <div className="team-members-page">
-      {/* Sticky Header */}
+      {/* Sticky header with logo and back button */}
       <div className="header-sticky-row">
         <div className="header-logo">
           <img src={logo} alt="SpHing Logo" style={{ width: 210, height: "auto" }} />
@@ -93,7 +95,7 @@ const TeamMembers = () => {
         </div>
       </div>
 
-      {/* Title and Controls */}
+      {/* Page title, search, add member */}
       <div className="title-with-button center-mode">
         <input
           type="text"
@@ -108,7 +110,7 @@ const TeamMembers = () => {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Members table or loading/empty states */}
       {loading ? (
         <div style={{ textAlign: "center", margin: "2rem" }}>Loading...</div>
       ) : filteredMembers.length === 0 ? (
@@ -121,7 +123,7 @@ const TeamMembers = () => {
           <MemberTable
             members={filteredMembers}
             locations={locations}
-            onDataChanged={fetchMembers} // פונקציה לריענון
+            onDataChanged={fetchMembers} // Will trigger a full refetch after edit/delete
           />
         </div>
       )}

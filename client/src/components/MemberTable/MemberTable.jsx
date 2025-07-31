@@ -34,17 +34,16 @@ export default function MemberTable({ members, locations, onDataChanged }) {
   const handleEditClick = (member) => {
     setSelectedMember(member);
 
-    // Normalize locations to an array of values
+    // Normalize locations to array of values (use .value)
     let locArray = [];
-    if (typeof member.locations === "string") {
-      locArray = member.locations.split(",").map((loc) => loc.trim());
-    } else if (Array.isArray(member.locations)) {
-      // If locations are objects, extract their values (site_name or value)
+    if (Array.isArray(member.locations)) {
       locArray = member.locations.map((loc) =>
         typeof loc === "object" && loc !== null
           ? loc.value || loc.site_name || loc.name || ""
           : loc
       );
+    } else if (typeof member.locations === "string") {
+      locArray = member.locations.split(",").map((loc) => loc.trim());
     }
 
     setEditData({
@@ -74,19 +73,22 @@ export default function MemberTable({ members, locations, onDataChanged }) {
   };
 
   const saveEdit = async () => {
-    if (!selectedMember) return;
+    if (!editData.id) return;
     setLoading(true);
+    console.log("Saving member:", editData); // Debug!
     try {
       const payload = {
         ...editData,
-        // Send locations as a string (comma-separated), or adapt to backend structure
         locations: Array.isArray(editData.locations)
           ? editData.locations.join(", ")
           : editData.locations,
       };
-      await updateMember(selectedMember.id, payload);
+      await updateMember(editData.id, payload); // Always use editData.id!
       setShowEditModal(false);
-      if (onDataChanged) onDataChanged();
+      if (onDataChanged) {
+        console.log("Refetching members...");
+        onDataChanged();
+      }
     } catch (err) {
       console.error("Failed to update member:", err);
     } finally {
@@ -109,13 +111,12 @@ export default function MemberTable({ members, locations, onDataChanged }) {
         </thead>
         <tbody>
           {members.map((member) => {
-            // Display locations: support arrays of objects, strings, etc.
+            // Prepare display string for locations
             const displayLocations = Array.isArray(member.locations)
               ? member.locations
                   .map((loc) => {
                     if (typeof loc === "string") return loc;
                     if (typeof loc === "object" && loc !== null) {
-                      // Try site_name first, then name, else stringify
                       return loc.site_name || loc.name || JSON.stringify(loc);
                     }
                     return "";
@@ -212,8 +213,7 @@ export default function MemberTable({ members, locations, onDataChanged }) {
             <label>Locations</label>
             <Select
               isMulti
-              // Value must match option structure (usually value = id or name)
-              value={locations.filter((loc) => editData.locations.includes(loc.value))}
+              value={locations.filter((loc) => editData.locations && editData.locations.includes(loc.value))}
               onChange={(selected) =>
                 setEditData({ ...editData, locations: selected.map((opt) => opt.value) })
               }

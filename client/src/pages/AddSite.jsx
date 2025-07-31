@@ -27,6 +27,10 @@ export default function AddSite() {
           />
         </div>
         <div className="header-actions">
+          <button className="back-to-dashboard-btn" onClick={() => navigate("/edit-site")}>
+            Edit Site
+          </button>
+
           <button
             className="back-to-dashboard-btn"
             onClick={() => navigate("/dashboard")}

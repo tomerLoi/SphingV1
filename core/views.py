@@ -3,8 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Location
 from rest_framework import serializers
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -19,34 +17,25 @@ from .serializers import ITMemberSerializer, LocationSerializer, ISPSerializer, 
 from .logic import ping_ip
 from core import logic
 
-# Logs endpoint: GET /logs/
-
-# IT Members API: GET and POST /api/it_members/
+# Login endpoint
 class CustomLoginView(APIView):
     permission_classes = []
     def post(self, request):
-        email = request.data.get('username')  # Using 'username' for email login
+        email = request.data.get('username')
         password = request.data.get('password')
-       # print(f"Attempting login for email: {email}")  # Debugging line
-       # print(f"Password provided: {password}")  # Debugging line
         user = None
         if email and password:
             try:
                 user_obj = User.objects.get(email=email)
-                #print(f"User found: {user_obj}")  # Debugging line
                 user = authenticate(request, username=user_obj.username, password=password)
-                #print(f"User found: {user}")  # Debugging line
             except User.DoesNotExist:
                 user = None
         if user is None:
             return Response({'detail': 'Invalid credentials'}, status=400)
         refresh = RefreshToken.for_user(user)
-
-        # Dashboard data: all sites and their ISPs with status
         site_list_view = SiteListCreateView()
         dashboard_response = site_list_view.get(request)
         dashboard = dashboard_response.data
-
         return Response({
             'token': str(refresh.access_token),
             'user_id': user.id,
@@ -54,15 +43,12 @@ class CustomLoginView(APIView):
             'dashboard': dashboard
         })
 
-
 # Sites endpoints
 class SiteListCreateView(APIView):
     def get(self, request):
         start_time = time.time()
         continents = Location.objects.values_list('continent_name', flat=True).distinct()
         result = []
-        # Fetch the last 50 logs
-
         for continent in continents:
             locations = Location.objects.filter(continent_name=continent)
             sites_data = []
@@ -70,7 +56,7 @@ class SiteListCreateView(APIView):
                 isps = site.isps.all()
                 isps_data = []
                 for isp in isps:
-                    activity_level = isp.activity_level  # Assuming `activity_level` is a field in the ISP model
+                    activity_level = isp.activity_level
                     isps_data.append({
                         'isp_id': isp.id,
                         'name': isp.name,
@@ -99,8 +85,6 @@ class SiteListCreateView(APIView):
         site_name = data.get('site_name')
         continent = data.get('continent')
         isps = data.get('isps', [])
-
-        # Validation
         if not site_name or not isinstance(site_name, str) or len(site_name) > 255:
             return Response({'error': 'site_name is required and must be a string up to 255 chars'}, status=400)
         if not continent or not isinstance(continent, str):
@@ -110,13 +94,11 @@ class SiteListCreateView(APIView):
         for isp in isps:
             if not isp.get('name') or not isp.get('ip'):
                 return Response({'error': 'Each ISP must have a name and ip'}, status=400)
-        # Optionally validate continent exists
         known_continents = set(Location.objects.values_list('continent_name', flat=True).distinct())
         if continent not in known_continents:
             return Response({'error': 'continent must match a known continent'}, status=400)
         end_time = time.time()
         print(f"POST request processing time: {end_time - start_time:.2f} seconds")
-        # Create or update
         if site_id:
             try:
                 site = Location.objects.get(id=site_id)
@@ -130,12 +112,10 @@ class SiteListCreateView(APIView):
         else:
             site = Location.objects.create(site_name=site_name, continent_name=continent)
             message = 'Site created successfully'
-        # Add ISPs
         for isp in isps:
             isp_obj, _ = ISP.objects.get_or_create(name=isp['name'], ip_address=isp['ip'])
             site.isps.add(isp_obj)
         site.save()
-        # Prepare response
         resp = {
             'site': {
                 'site_id': site.id,
@@ -209,7 +189,7 @@ class MemberListCreateView(APIView):
                 'phone': m.phone_number,
                 'email': m.email,
                 'location': m.location,
-                'is_global': True # Placeholder, adjust as needed
+                'is_global': True
             }
             entry['locations'] = []
             for user in User.objects.all():
@@ -243,11 +223,9 @@ class MemberListCreateView(APIView):
         print(f"MemberListCreateView GET processing time: {end_time - start_time:.2f} seconds")
         return resp
     
-    
     def post(self, request):
         data = request.data
         required_fields = ['full_name', 'role', 'email','location', 'phone']
-        
         for field in required_fields:
             if not data.get(field):
                 return Response({'error': f'{field} is required'}, status=400)
@@ -259,7 +237,7 @@ class MemberListCreateView(APIView):
             member = ITMember.objects.create(
                 full_name=data['full_name'],
                 email=data['email'],
-                phone_number=data.get('phone_number', ''),
+                phone_number=data.get('phone', data.get('phone_number', '')),
                 location=data.get('location', '')
             )
             if data['role'].lower() == 'it member':
@@ -275,37 +253,28 @@ class MemberListCreateView(APIView):
         except Exception as e:
             return Response({'error': f'Server error: {e}'}, status=500)
 
-
+# --- Fixed class ---
 class MemberRetrieveUpdateDestroyView(APIView):
     def get_object(self, pk):
         try:
             return ITMember.objects.get(pk=pk)
         except ITMember.DoesNotExist:
-            return None
+            raise NotFound('ITMember not found')
 
     def put(self, request, pk):
         member = self.get_object(pk)
-        if not member:
-            return Response({'error': 'ITMember not found'}, status=404)
         data = request.data
-
         member.full_name = data.get('full_name', member.full_name)
         member.email = data.get('email', member.email)
         member.phone_number = data.get('phone', member.phone_number)
-        member.location = data.get('locations', member.location)
+        locations_str = data.get('locations') or data.get('location') or ""
+        if isinstance(locations_str, list):
+            member.location = ", ".join(locations_str)
+        else:
+            member.location = locations_str
         member.save()
-
-        # Process locations
+        ToNotice.objects.filter(members=member).delete()
         locations = [loc.strip() for loc in member.location.split(',') if loc.strip()]
-        print(locations)
-        existing_notices = ToNotice.objects.filter(members=member)
-        # Remove all ToNotice objects the member is part of
-        for notice in existing_notices:
-            notice.members.remove(member)
-            if notice.members.count() == 0:
-                notice.delete()
-
-        # Create ToNotice objects for each location
         for location_name in locations:
             try:
                 location = Location.objects.get(site_name=location_name)
@@ -314,48 +283,38 @@ class MemberRetrieveUpdateDestroyView(APIView):
                 notice.sites.add(location)
                 notice.save()
             except Location.DoesNotExist:
-                return Response({'error': f'Location "{location_name}" not found'}, status=404)
-
-        if data.get('role').lower() == 'it member':
-            try:
-                user = User.objects.get(username=member.full_name)
-            except User.DoesNotExist:
-                password = data.get('password')
-                if not password:
-                    return Response({'error': 'Password is required for IT Member role'}, status=400)
-                user = User.objects.create_user(
-                    username=member.full_name,
-                    password=password,
-                    email=member.email
-                )
-        elif data.get('role').lower() == 'contact':
+                continue
+        if data.get('role', '').lower() == 'it member':
+            user, created = User.objects.get_or_create(username=member.full_name, defaults={'email': member.email})
+            if created:
+                password = data.get('password', None)
+                if password:
+                    user.set_password(password)
+                    user.save()
+        elif data.get('role', '').lower() == 'contact':
             try:
                 user = User.objects.get(username=member.full_name)
                 user.delete()
             except User.DoesNotExist:
                 pass
-
         serializer = ITMemberSerializer(member)
         return Response(serializer.data, status=200)
-    
+
     def delete(self, request, pk):
+        member = self.get_object(pk)
         try:
-            member = self.get_object(pk)
-            try:
-                user = User.objects.get(username=member.full_name)
-                user.delete()
-            except User.DoesNotExist:
-                pass
-            member.delete()
-            return Response({'message': 'ITMember and associated User (if any) deleted successfully'}, status=204)
-        except ITMember.DoesNotExist:
-            return Response({'error': 'ITMember not found'}, status=404)
+            user = User.objects.get(username=member.full_name)
+            user.delete()
+        except User.DoesNotExist:
+            pass
+        member.delete()
+        return Response({'message': 'ITMember and associated User (if any) deleted successfully'}, status=204)
+# --- End fix ---
 
 class MemberTestSMSView(APIView):
     def post(self, request, pk):
         return Response({'success': True})
 
-# Alerts endpoint
 class AlertListView(APIView):
     def get(self, request):
         start_time = time.time()
@@ -375,7 +334,6 @@ class AlertListView(APIView):
         end_time = time.time()
         print(f"AlertListView GET processing time: {end_time - start_time:.2f} seconds")
         return resp
-
 
 class LocationCreateWithISPsView(APIView):
     def post(self, request):
@@ -399,7 +357,6 @@ class LocationCreateWithISPsView(APIView):
             'continent': location.continent_name,
             'isps': [{'name': isp.name, 'ip': isp.ip_address} for isp in location.isps.all()]
         }, status=201)
-
 
 class AddSiteContinentListView(APIView):
     def get(self, request):
@@ -427,7 +384,6 @@ class LocationDeleteWithISPsView(APIView):
                 deleted_isps.append({'id': isp.id, 'name': isp.name, 'ip': isp.ip_address})
                 isp.delete()
         return Response({'deleted_location_id': location_id, 'deleted_isps': deleted_isps}, status=200)
-        
         
 class LogListView(APIView):
     def get(self, request):

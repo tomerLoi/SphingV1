@@ -1,78 +1,120 @@
-client/
-├── public/
-├── src/
-│   ├── api/
-│   │   ├── alerts.js       
-│   │   ├── auth.js           
-│   │   ├── members.js       
-│   │   ├── profile.js        
-│   │   └── sites.js         
-│   ├── assets/
-│   │   ├── images/
-│   │   │   └── sphing_logo.png
-│   │   └── styles/
-│   │       ├── addmember.css
-│   │       ├── alerts.css
-│   │       ├── dashboard.css
-│   │       ├── global.css
-│   │       ├── login.css
-│   │       ├── navbar.css
-│   │       ├── siteform.css
-│   │       └── teammembers.css
-│   ├── components/
-│   │   ├── AddMemberForm/
-│   │   │   └── AddMemberForm.jsx
-│   │   ├── AddSiteForm/
-│   │   │   └── AddSiteForm.jsx
-│   │   ├── Alerts/
-│   │   │   ├── AlertDropdown.jsx
-│   │   │   ├── AlertList.jsx
-│   │   │   └── AlertsSidebar.jsx
-│   │   ├── EditSiteForm/
-│   │   │   └── EditSiteForm.jsx
-│   │   ├── LoginForm/
-│   │   │   └── LoginForm.jsx
-│   │   ├── MemberForm/
-│   │   │   └── MemberForm.jsx
-│   │   ├── MemberTable/
-│   │   │   └── MemberTable.jsx
-│   │   ├── Navbar/
-│   │   │   └── Navbar.jsx
-│   │   ├── PingStatus/
-│   │   │   └── PingStatus.jsx
-│   │   ├── PortalMenu/
-│   │   │   ├── PortalMenu.jsx
-│   │   ├── SiteCard/
-│   │   │   └── SiteCard.jsx
-│   │   ├── SiteForm/
-│   │   │   └── SiteForm.jsx
-│   │   ├── SiteList/
-│   │   │   ├── SiteList.jsx
-│   │   │   └── SiteRow.jsx
-│   │   ├── TeamTable/
-│   │   │   └── TeamTable.jsx
-│   │   └── PrivateRoute.jsx
-│   ├── pages/
-│   │   ├── AddMember.jsx
-│   │   ├── AddSite.jsx
-│   │   ├── Alerts.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── EditSite.jsx
-│   │   ├── Login.jsx
-│   │   ├── ProfilePage.jsx
-│   │   └── TeamMembers.jsx
-│   ├── utils/              
-│   ├── App.css
-│   ├── App.jsx
-│   ├── App.test.js
-│   ├── config.js
-│   ├── index.css
-│   ├── index.js
-│   ├── logo.svg
-│   ├── reportWebVitals.js
-│   └── setupTests.js
-├── package.json
-└── README.md
+SPHINGV1/
+│
+├── client/                   # Frontend - React
+│   ├── node_modules/
+│   ├── public/
+│   └── src/
+│       ├── api/
+│       │   ├── alerts.js
+│       │   ├── auth.js
+│       │   ├── members.js
+│       │   ├── profile.js
+│       │   └── sites.js
+│       ├── assets/
+│       │   ├── images/
+│       │   │   └── sphing_logo.png
+│       │   └── styles/
+│       │       ├── addmember.css
+│       │       ├── alerts.css
+│       │       ├── dashboard.css
+│       │       ├── global.css
+│       │       ├── login.css
+│       │       ├── navbar.css
+│       │       ├── siteform.css
+│       │       └── teammembers.css
+│       ├── components/
+│       │   ├── AddMemberForm/
+│       │   │   └── AddMemberForm.jsx
+│       │   ├── AddSiteForm/
+│       │   │   └── AddSiteForm.jsx
+│       │   ├── Alerts/
+│       │   │   ├── AlertDropdown.jsx
+│       │   │   ├── AlertList.jsx
+│       │   │   └── AlertsSidebar.jsx
+│       │   ├── EditSiteForm/
+│       │   │   └── EditSiteForm.jsx
+│       │   ├── LoginForm/
+│       │   │   └── LoginForm.jsx
+│       │   ├── MemberForm/
+│       │   │   └── MemberForm.jsx
+│       │   ├── MemberTable/
+│       │   │   └── MemberTable.jsx
+│       │   ├── Navbar/
+│       │   │   └── Navbar.jsx
+│       │   ├── PingStatus/
+│       │   │   └── PingStatus.jsx
+│       │   ├── PortalMenu/
+│       │   │   └── PortalMenu.jsx
+│       │   ├── SiteCard/
+│       │   │   └── SiteCard.jsx
+│       │   ├── SiteForm/
+│       │   │   └── SiteForm.jsx
+│       │   ├── SiteList/
+│       │   │   ├── SiteList.jsx
+│       │   │   └── SiteRow.jsx
+│       │   ├── TeamTable/
+│       │   │   └── TeamTable.jsx
+│       │   └── PrivateRoute.jsx
+│       ├── pages/
+│       │   ├── AddMember.jsx
+│       │   ├── AddSite.jsx
+│       │   ├── Alerts.jsx
+│       │   ├── Dashboard.jsx
+│       │   ├── EditSite.jsx
+│       │   ├── Login.jsx
+│       │   ├── ProfilePage.jsx
+│       │   └── TeamMembers.jsx
+│       ├── utils/
+│       ├── App.css
+│       ├── App.jsx
+│       ├── App.test.js
+│       ├── config.js
+│       ├── index.css
+│       ├── index.js
+│       ├── index.jsx
+│       ├── logo.svg
+│       ├── reportWebVitals.js
+│       └── setupTests.js
+│   ├── .gitignore
+│   ├── package.json
+│   ├── package-lock.json
+│   └── README.md
+│
+├── core/                     # Backend - Django app
+│   ├── management/
+│   │   └── commands/
+│   │       ├── create_test_user.py
+│   │       ├── insert_random_location.py
+│   │       └── load_mock_data.py
+│   ├── migrations/
+│   │   ├── __init__.py
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_alert_success_rate.py
+│   │   └── 0003_log.py
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── logic.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+│
+├── sphingv1_project/         # Django project settings
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+│
+├── db.sqlite3                # Database (SQLite - dev only)
+├── instruction.md
+├── manage.py
+├── ping_30.ps1
+├── planning.txt
+├── requirements.txt
+└── setup_and_run.ps1
 
 
 

@@ -1,5 +1,3 @@
-// src/components/AddMemberForm/AddMemberForm.jsx
-
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { createMember, getLocations } from "../../api/members";
@@ -9,7 +7,7 @@ const AddMemberForm = ({ onSuccess }) => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
-    locations: [], // Array of selected locations (by value)
+    locations: [],
     email: "",
     role: "Contact",
     password: "",
@@ -18,15 +16,14 @@ const AddMemberForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch all locations for the multi-select dropdown
+  // Fetch locations for dropdown
   useEffect(() => {
     async function fetchLocations() {
       try {
         const data = await getLocations();
-        // Make sure data is an array of objects with 'site_name'
         let arr = Array.isArray(data)
           ? data.map((loc) => ({
-              value: loc.site_name, // If you prefer IDs, use loc.id
+              value: loc.site_name,
               label: loc.site_name,
             }))
           : [];
@@ -45,19 +42,22 @@ const AddMemberForm = ({ onSuccess }) => {
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   };
 
-  // Form change handler
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // Special handling for role switch
     if (name === "role" && value === "IT Member") {
       setForm((prev) => ({
         ...prev,
         role: value,
+        locations: ["All"], // <-- Auto-select All and lock!
         password: generatePassword(),
       }));
     } else if (name === "role" && value === "Contact") {
       setForm((prev) => ({
         ...prev,
         role: value,
+        locations: [],
         password: "",
       }));
     } else {
@@ -65,7 +65,7 @@ const AddMemberForm = ({ onSuccess }) => {
     }
   };
 
-  // Multi-select handler
+  // Multi-select handler (will be ignored if disabled)
   const handleLocationsChange = (selected) => {
     setForm((prev) => ({
       ...prev,
@@ -81,12 +81,11 @@ const AddMemberForm = ({ onSuccess }) => {
     try {
       const payload = {
         ...form,
-        locations: form.locations.join(", "), // Send as comma-separated string
+        location: form.locations.join(", "),
       };
+      delete payload.locations;
       if (payload.role === "Contact") delete payload.password;
-
       await createMember(payload);
-
       setForm({
         full_name: "",
         phone: "",
@@ -102,6 +101,12 @@ const AddMemberForm = ({ onSuccess }) => {
       setLoading(false);
     }
   };
+
+  // Get value for react-select according to current role
+  const selectValue =
+    form.role === "IT Member"
+      ? [{ value: "All", label: "All" }]
+      : locationsOptions.filter((opt) => form.locations.includes(opt.value));
 
   return (
     <form className="add-member-form" onSubmit={handleSubmit} autoComplete="off">
@@ -145,13 +150,16 @@ const AddMemberForm = ({ onSuccess }) => {
       <Select
         id="locations"
         isMulti
-        options={locationsOptions}
-        value={locationsOptions.filter((opt) => form.locations.includes(opt.value))}
+        options={form.role === "IT Member"
+          ? [{ value: "All", label: "All" }]
+          : locationsOptions}
+        value={selectValue}
         onChange={handleLocationsChange}
         className="react-select-container"
         classNamePrefix="react-select"
         placeholder="Select locations..."
         required
+        isDisabled={form.role === "IT Member"} // <--- lock when IT Member!
         styles={{
           control: (base) => ({
             ...base,

@@ -25,9 +25,6 @@ export default function Navbar({
           <button className="navbar-btn" onClick={() => navigate("/add-site")}>
             Add Site
           </button>
-          <button className="navbar-btn" onClick={() => navigate("/edit-site")}>
-            Edit Site
-          </button>
           <button className="navbar-btn" onClick={() => navigate("/team-members")}>
             Members
           </button>
@@ -43,13 +40,13 @@ export default function Navbar({
             </span>
             Profile
           </button>
-          {/* Refresh button with countdown, calls parent callback */}
+          {/* Refresh button with countdown, calls parent callback
           <button
             className="navbar-btn navbar-refresh"
             onClick={onRefreshClick}
           >
             Refresh <span className="refresh-counter">{seconds.toString().padStart(2, "0")}</span>
-          </button>
+          </button> */}
           {/* Bell/alerts button */}
           <button className="navbar-btn navbar-bell" onClick={() => setAlertsOpen(true)}>
             <span className="bell-icon" style={{ position: "relative" }}>
