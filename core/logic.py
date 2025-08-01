@@ -1,9 +1,16 @@
-
 import subprocess
 import platform
 import threading
 import time
 from .models import *
+import datetime
+from django.utils import timezone
+import os
+from twilio.rest import Client
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file one directory up
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 
 
@@ -22,16 +29,11 @@ def start_concurrent_pings(ip_addresses, count=1, timeout=1000):
             for ip_address in ip_addresses:
                 reachable = ping_ip(ip_address, count, timeout)
                 ping_results[ip_address] = reachable
-            time.sleep(120)
-            update_isp_activity_level(ping_results)
-
-            # Run periodic tasks
-            monitor_isp_connectivity()
-            delete_false_alerts()
-            check_round_of_three_alerts()
-
-            # Wait 10 seconds before the next iteration
             time.sleep(10)
+            update_isp_activity_level(ping_results)
+            ensure_users_are_members()
+            ensure_locations_have_to_notice()
+            monitor_activity()
 
     # Start a single thread to handle all pings and periodic tasks
     thread = threading.Thread(target=ping_and_update, daemon=True)
@@ -39,8 +41,7 @@ def start_concurrent_pings(ip_addresses, count=1, timeout=1000):
 
     return ping_results
 
-
-def ping_ip(ip_address, count=1, timeout=1000):
+def ping_ip(ip_address, count=5, timeout=1000):
     """
     Pings an IP address. Returns True if reachable, False otherwise.
     count: number of echo requests
@@ -93,112 +94,6 @@ def update_isp_activity_level(ping_results):
                     print(f"An error occurred while updating ISP activity level for {ip_address}: {e}")
                     break  # Exit retry loop for non-retryable errors
 
-def monitor_isp_connectivity(threshold=80):
-    """
-    Monitors the ping results for a given ISP and creates an alert instance
-    in the model if the success rate for any IP address falls below the specified threshold.
-    """
-    """
-        Loops through all ISPs in the database and checks their connectivity level.
-        Updates all ISPs with the same IP address and creates or removes alerts based on the success rate.
-        """
-
-    try:
-        isps = ISP.objects.all()
-        checked_ids = set()
-        for isp in isps:
-            isp_id = isp.id
-            if isp_id in checked_ids:
-                continue
-            checked_ids.add(isp_id)
-            alert_exists = Alert.objects.filter(isps__id=isp_id).exists()
-            if alert_exists:
-                # If this ISP is below threshold, keep alert, else remove
-                if isp.activity_level < threshold:
-                    continue
-                else:
-                    remove_alerts_by_ip(isp.ip_address)
-            else:
-                # If this ISP is below threshold, create alert
-                if isp.activity_level < threshold:
-                    create_alert(isp.ip_address, isp.activity_level)
-    except Exception as e:
-        print(f"An error occurred while monitoring ISP connectivity: {e}")
-
-def create_alert(ip_address, success_rate):
-    """
-    Creates an alert instance in the model for the given IP address and success rate.
-    """
-    try:
-        if success_rate < 80 and not check_alert_exists(ip_address):
-            isps = list(ISP.objects.filter(ip_address=ip_address))
-            if not isps:
-                isp = ISP.objects.create(ip_address=ip_address, name=f"ISP_{ip_address}")
-                isps = [isp]
-            alert = Alert.objects.create(success_rate=success_rate)
-            for isp in isps:
-                alert.isps.add(isp)
-            create_log_entry(f"Alert created for {ip_address} is down with success rate {success_rate}")
-    except Exception as e:
-        print(f"An error occurred while creating an alert: {e}")
-        
-def check_alert_exists(ip_address):
-    """
-    Checks whether an alert exists for the given ISP IP address.
-    Returns True if an alert exists, False otherwise.
-    """
-    try:
-        isps = ISP.objects.filter(ip_address=ip_address)
-        if isps.exists():
-            return Alert.objects.filter(isps__in=isps).exists()
-        return False
-    except Exception as e:
-        print(f"An error occurred while checking for an alert: {e}")
-        return False
-     
-def remove_alerts_by_ip(ip_address):
-    """
-    Removes all alerts associated with the given IP address.
-    """
-    try:
-        isps = ISP.objects.filter(ip_address=ip_address)
-        if isps.exists():
-            print(f"Removing alerts for ISPs with IP {ip_address}")
-            alerts = Alert.objects.filter(isps__in=isps)
-            if alerts.exists():
-                print(f"Found {alerts.count()} alerts to delete for ISPs with IP {ip_address}")
-                alerts.delete()
-                create_log_entry(f"Deleted alerts for ISPs with IP {ip_address} ip is back online")
-            else:
-                print(f"No alerts found for ISPs with IP {ip_address}")
-        else:
-            print(f"No ISPs found with IP {ip_address}")
-    except Exception as e:
-        print(f"An error occurred while removing alerts: {e}")
-             
-def delete_false_alerts():
-    """
-    Deletes alerts that do not have a corresponding ISP address.
-    For each alert, checks if the associated IP address exists in the ISP model.
-    If the IP address does not exist, removes the alert.
-    """
-    try:
-        alerts = Alert.objects.all()
-        for alert in alerts:
-            isps = alert.isps.all()
-            for isp in isps:
-                if not ISP.objects.filter(ip_address=isp.ip_address).exists():
-                    #print(f"IP address {isp.ip_address} does not exist. Removing from alert.")
-                    alert.isps.remove(isp)
-                    create_log_entry(f"Removed ISP {isp.name} ({isp.ip_address}) from alert {alert.id} as it does not exist.")
-            if not alert.isps.exists():  # If no ISPs are associated with the alert, delete it
-                print(f"No valid ISPs associated with alert {alert.id}. Deleting alert.")
-                alert.delete()
-    except Exception as e:
-        print(f"An error occurred while deleting false alerts: {e}")
-                
-#users and members logic 
-
 def ensure_users_are_members():
     """
     Ensures that every user in the database is also a member.
@@ -211,50 +106,216 @@ def ensure_users_are_members():
             member_exists = ITMember.objects.filter(full_name=user.username).exists()
             if not member_exists:
                 ITMember.objects.create(full_name=user.username, phone_number='', location='', email=user.email)
-                print(f"Member created for user {user.username}")
     except Exception as e:
-        print(f"An error occurred while ensuring users are members: {e}")
-        
+        pass
 
-def create_log_entry(message):
+def ensure_locations_have_to_notice():
     """
-    Creates a new log entry in the Log model with the given message.
+    Ensures that each Location has a corresponding ToNotice object.
+    If a ToNotice object does not exist, it creates one with default values.
     """
     try:
-        Log.objects.create(message=message, timestamp=time.strftime('%Y-%m-%d %H:%M:%S'))
-        print(f"Log entry created: {message}")
+        locations = Location.objects.all()
+        for location in locations:
+            to_notice_exists = ToNotice.objects.filter(sites=location).exists()
+            if not to_notice_exists:
+                from django.utils import timezone
+                to_notice = ToNotice.objects.create(
+                    sites=location,
+                    valid_till=timezone.make_aware(datetime.datetime(2099, 1, 1))
+                )
+                to_notice.members.set([])
     except Exception as e:
-        print(f"An error occurred while creating a log entry: {e}")
-
-
-def delete_old_logs(days=3):
+        pass
+      
+def create_log_entry(description):
     """
-    Deletes log entries older than the specified number of days.
+    Create a log entry with the given description.
     """
     try:
-        cutoff_time = time.time() - (days * 24 * 60 * 60)
-        old_logs = Log.objects.filter(timestamp__lt=time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(cutoff_time)))
-        count = old_logs.count()
-        old_logs.delete()
-        print(f"Deleted {count} log entries older than {days} days.")
+        # Ensure timezone-aware datetime for Log.timestamp
+        log = Log.objects.create(message=description, timestamp=timezone.now())
+        notify_members_on_log(description)
     except Exception as e:
-        print(f"An error occurred while deleting old logs: {e}")
-        
-def check_round_of_three_alerts():
+        pass
+
+# --- Notification logic ---
+def notify_members_on_log(log_message):
     """
-    Checks all alerts to see if they are in a 'round of three' state.
-    A 'round of three' means that (current time - alert timestamp) / 3 is rounded to 10 seconds.
+    Notifies relevant ITMembers by email and SMS when a log is created.
+    - If the member is also a User, notify for all logs.
+    - If not a User, notify only if the member is in ToNotice for the log's location.
+    """
+    description, location_name, isp, ip_address = parse_log_message(log_message)
+    
+    if not location_name:
+        return
+    
+    # Get all ITMembers
+    for member in ITMember.objects.all():
+        
+        # Check if member is also a User
+        is_user = User.objects.filter(username=member.full_name).exists()
+        
+        should_notify = False
+        if is_user:
+            should_notify = True
+        else:
+            # Not a user: check ToNotice for this location
+            try:
+                loc = Location.objects.get(site_name=location_name)
+                
+                to_notice = ToNotice.objects.filter(sites=loc, members=member).exists()
+                
+                if to_notice:
+                    should_notify = True
+            except Location.DoesNotExist:
+                pass
+        
+        if should_notify:
+            # Send email and SMS (replace with real services)
+            send_email(member.email, f"Alert: {description}", log_message)
+            send_sms(member.phone_number, log_message)
+
+# Load Twilio credentials from environment variables
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+
+# Initialize Twilio client
+twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+def send_email(to_email, subject, body):
+    """
+    Sends an email using Twilio SendGrid API (or similar service).
+    Replace this with actual implementation for email sending.
+    """
+    # Implement email sending logic here using Twilio SendGrid or other email service
+
+def send_sms(to_number, message):
+    """
+    Sends an SMS using Twilio API.
     """
     try:
-        alerts = Alert.objects.all()
-        current_time = time.time()
-        for alert in alerts:
-            alert_time = time.mktime(alert.timestamp.timetuple())
-            elapsed_time = current_time - alert_time
-            if (elapsed_time / 3) % 10 == 0:
-                print(f"Alert {alert.id} is in a round of three state.")
-                hours_active = int(elapsed_time // 3600)
-                create_log_entry(f"Alert {alert.id} has been active for {hours_active} hours.")
+        message = twilio_client.messages.create(
+            body=message,
+            from_=TWILIO_PHONE_NUMBER,
+            to=to_number
+        )
     except Exception as e:
-        print(f"An error occurred while checking round of three alerts: {e}")
+        pass
         
+
+def create_alert(isp, success_rate):
+    """
+    Creates an alert for the given ISP with the specified message and resolved status.
+    """
+    try:
+        from django.utils import timezone
+        Alert.objects.create(isps=isp, success_rate=success_rate, timestamp=timezone.now())
+    except Exception as e:
+        pass
+
+def parse_log_message(log_message):
+    """
+    Parses a log message into its components: description, location, ISP, and IP address.
+    Handles both standard (colon-separated) and simple status messages.
+
+    Returns:
+        tuple: (description, location, isp, ip_address)
+    """
+    try:
+        if not log_message or not isinstance(log_message, str):
+            return None, None, None, None
+        parts = log_message.split(':')
+        if len(parts) == 4:
+            description = parts[0].strip()
+            location = parts[1].strip()
+            isp = parts[2].strip()
+            ip_address = parts[3].strip()
+            return description, location, isp, ip_address
+        # Handle 'ISP ... is back up. Alert resolved.'
+        elif log_message.lower().startswith("isp") and "back up" in log_message.lower() and "alert resolved" in log_message.lower():
+            import re
+            match = re.match(r"ISP ([^ ]+) is back up\. Alert resolved\.", log_message)
+            if match:
+                isp_name = match.group(1)
+                description = log_message.strip()
+                return description, None, isp_name, None
+            else:
+                description = log_message.strip()
+                return description, None, None, None
+        # Add more custom parsing as needed for other formats
+        return log_message.strip(), None, None, None
+    except Exception as e:
+        return log_message if isinstance(log_message, str) else None, None, None, None
+
+def filter_logs(isp_name, ip_address, minutes):
+    """
+    Filters logs for a specific ISP and IP address within the last given number of minutes.
+
+    Args:
+        isp_name (str): The name of the ISP to filter logs for.
+        ip_address (str): The IP address to filter logs for.
+        minutes (int): The time period in minutes to look back.
+
+    Returns:
+        list: A list of filtered logs matching the criteria.
+    """
+    try:
+        from django.utils import timezone
+        time_threshold = timezone.now() - datetime.timedelta(minutes=minutes)
+        recent_logs = Log.objects.filter(timestamp__gte=time_threshold)
+        filtered_logs = []
+
+        for log in recent_logs:
+            description, location, log_isp, log_ip = parse_log_message(log.message)
+            if log_isp == isp_name and log_ip == ip_address:
+                filtered_logs.append(log)
+
+        return filtered_logs
+    except Exception as e:
+        return []
+
+def monitor_activity():
+    """
+    Monitors ISP activity and handles alerts and logs based on ISP status.
+    """
+    try:
+        isps = ISP.objects.all()
+
+        for isp in isps:
+            location = isp.site if hasattr(isp, 'site') else None
+
+            if isp.activity_level < 80:  # ISP is down
+                recent_alert = Alert.objects.filter(isps=isp).order_by('-timestamp').first()
+                if not recent_alert:
+                    create_alert(isp, isp.activity_level)
+                else:
+                    time_since_alert = (timezone.now() - recent_alert.timestamp).total_seconds() / 60
+
+                    filtered_logs = filter_logs(isp.name, isp.ip_address, 30)
+                    if not filtered_logs and time_since_alert > 10:
+                        create_log_entry(
+                            description=f"Site down: {location.site_name if location else 'Unknown'}: {isp.name}: {isp.ip_address}"
+                        )
+                    if not filtered_logs and time_since_alert > 180:  # More than 3 hours
+                        filtered_logs_3_hours = filter_logs(isp.name, isp.ip_address, 180)
+                        if not filtered_logs_3_hours:
+                            create_log_entry(
+                                description=f"ISP is down for more than {time_since_alert / 60} hours: {isp.name} ({isp.ip_address}) : {location.site_name if location else 'Unknown'} : {isp.name} : {isp.ip_address}"
+                            )
+            else:  # ISP is up
+                alert = Alert.objects.filter(isps=isp).first()
+
+                if alert:
+                    time_since_alert = (timezone.now() - alert.timestamp).total_seconds() / 60
+
+                    if time_since_alert > 1:
+                        alert.delete()
+                        location_name = location.site_name if location else 'Unknown'
+                        create_log_entry(
+                            description=f"ISP is back up: {location_name}: {isp.name}: {isp.ip_address}"
+                        )
+    except Exception as e:
+        pass

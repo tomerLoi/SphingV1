@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Location
+from .models import Continent
 from rest_framework import serializers
 from rest_framework import status, generics, permissions
 from django.contrib.auth import authenticate
@@ -13,7 +14,7 @@ from rest_framework.exceptions import NotFound
 import time
 
 from .models import ITMember, Location, ISP, Log, ToNotice, Alert, UserProfile
-from .serializers import ITMemberSerializer, LocationSerializer, ISPSerializer, AlertSerializer
+from .serializers import ITMemberSerializer, LocationSerializer, ISPSerializer, AlertSerializer , ContinentSerializer
 from .logic import ping_ip
 from core import logic
 
@@ -30,12 +31,16 @@ class CustomLoginView(APIView):
                 user = authenticate(request, username=user_obj.username, password=password)
             except User.DoesNotExist:
                 user = None
-        if user is None:
-            return Response({'detail': 'Invalid credentials'}, status=400)
+        if user is None or not user.is_active:
+            return Response({'detail': 'Invalid credentials or inactive account'}, status=400)
         refresh = RefreshToken.for_user(user)
-        site_list_view = SiteListCreateView()
-        dashboard_response = site_list_view.get(request)
-        dashboard = dashboard_response.data
+        dashboard = None
+        if user.is_superuser:
+            dashboard = {'message': 'Welcome, superuser!'}
+        else:
+            site_list_view = SiteListCreateView()
+            dashboard_response = site_list_view.get(request)
+            dashboard = dashboard_response.data
         return Response({
             'token': str(refresh.access_token),
             'user_id': user.id,
@@ -47,13 +52,13 @@ class CustomLoginView(APIView):
 class SiteListCreateView(APIView):
     def get(self, request):
         start_time = time.time()
-        continents = Location.objects.values_list('continent_name', flat=True).distinct()
+        continents = Continent.objects.all()
         result = []
         for continent in continents:
             locations = Location.objects.filter(continent_name=continent)
             sites_data = []
             for site in locations:
-                isps = site.isps.all()
+                isps = ISP.objects.filter(site=site)
                 isps_data = []
                 for isp in isps:
                     activity_level = isp.activity_level
@@ -66,11 +71,11 @@ class SiteListCreateView(APIView):
                 sites_data.append({
                     'site_id': site.id,
                     'site_name': site.site_name,
-                    'continent': site.continent_name,
+                    'continent': continent.continent_name,
                     'isps': isps_data
                 })
             result.append({
-                'continent': continent,
+                'continent': continent.continent_name,
                 'sites': sites_data
             })
         resp = Response(result)
@@ -94,7 +99,7 @@ class SiteListCreateView(APIView):
         for isp in isps:
             if not isp.get('name') or not isp.get('ip'):
                 return Response({'error': 'Each ISP must have a name and ip'}, status=400)
-        known_continents = set(Location.objects.values_list('continent_name', flat=True).distinct())
+        known_continents = set(Continent.objects.values_list('continent_name', flat=True))
         if continent not in known_continents:
             return Response({'error': 'continent must match a known continent'}, status=400)
         end_time = time.time()
@@ -103,25 +108,23 @@ class SiteListCreateView(APIView):
             try:
                 site = Location.objects.get(id=site_id)
                 site.site_name = site_name
-                site.continent_name = continent
+                site.continent_name = Continent.objects.get(continent_name=continent)
                 site.save()
-                site.isps.clear()
+                ISP.objects.filter(site=site).delete()
                 message = 'Site updated successfully'
             except Location.DoesNotExist:
                 return Response({'error': 'Site not found'}, status=404)
         else:
-            site = Location.objects.create(site_name=site_name, continent_name=continent)
+            site = Location.objects.create(site_name=site_name, continent_name=Continent.objects.get(continent_name=continent))
             message = 'Site created successfully'
         for isp in isps:
-            isp_obj, _ = ISP.objects.get_or_create(name=isp['name'], ip_address=isp['ip'])
-            site.isps.add(isp_obj)
-        site.save()
+            isp_obj, _ = ISP.objects.get_or_create(name=isp['name'], ip_address=isp['ip'], site=site)
         resp = {
             'site': {
                 'site_id': site.id,
                 'site_name': site.site_name,
-                'continent': site.continent_name,
-                'isps': [{'name': isp.name, 'ip': isp.ip_address} for isp in site.isps.all()]
+                'continent': site.continent_name.continent_name,
+                'isps': [{'name': isp.name, 'ip': isp.ip_address} for isp in ISP.objects.filter(site=site)]
             },
             'message': message
         }
@@ -137,7 +140,7 @@ class SiteRetrieveUpdateDestroyView(APIView):
             raise NotFound('Site not found')
     def get(self, request, pk):
         site = self.get_object(pk)
-        isps = site.isps.all()
+        isps = ISP.objects.filter(site=site)
         isps_data = []
         for isp in isps:
             isps_data.append({
@@ -146,34 +149,25 @@ class SiteRetrieveUpdateDestroyView(APIView):
                 'ip': isp.ip_address,
                 'status': 'online' if ping_ip(isp.ip_address) else 'offline'
             })
-        return Response({'site_id': site.id, 'site_name': site.site_name, 'continent': site.continent_name, 'isps': isps_data})
+        return Response({'site_id': site.id, 'site_name': site.site_name, 'continent': site.continent_name.continent_name, 'isps': isps_data})
     def put(self, request, pk):
         site = self.get_object(pk)
         site.site_name = request.data.get('site_name', site.site_name)
-        site.continent_name = request.data.get('continent', site.continent_name)
+        continent_name = request.data.get('continent', site.continent_name.continent_name)
+        site.continent_name = Continent.objects.get(continent_name=continent_name)
         site.save()
         isps = request.data.get('isps', [])
-        site.isps.clear()
+        ISP.objects.filter(site=site).delete()
         for isp in isps:
-            isp_obj, _ = ISP.objects.get_or_create(name=isp['name'], ip_address=isp['ip'])
-            site.isps.add(isp_obj)
-        return Response({'site_id': site.id, 'site_name': site.site_name, 'continent': site.continent_name})
+            isp_obj, _ = ISP.objects.get_or_create(name=isp['name'], ip_address=isp['ip'], site=site)
+        return Response({'site_id': site.id, 'site_name': site.site_name, 'continent': site.continent_name.continent_name})
     def delete(self, request, pk):
         site = self.get_object(pk)
-        isps = list(site.isps.all())
+        isps = list(ISP.objects.filter(site=site))
         site.delete()
         for isp in isps:
-            related_name = None
-            for rel in isp._meta.related_objects:
-                if rel.related_model.__name__ == 'Location':
-                    related_name = rel.get_accessor_name()
-                    break
-            if related_name:
-                if getattr(isp, related_name).count() == 0:
-                    isp.delete()
-            else:
-                if hasattr(isp, 'location_set') and isp.location_set.count() == 0:
-                    isp.delete()
+            if not ISP.objects.filter(id=isp.id).exists():
+                isp.delete()
         return Response(status=204)
 
 # Members endpoints
@@ -205,18 +199,15 @@ class MemberListCreateView(APIView):
                 for notice in ToNotice.objects.all():
                     for sender in notice.members.all():
                         if str(sender) == str(m.full_name):
-                            sites = notice.sites.all()
-                            if not sites:
-                                print(f"No sites associated with notice ID {notice.id}")
-                            else:
-                                for site in sites:
-                                    if hasattr(site, 'site_name'):
-                                        entry['locations'].append(site.site_name)
-                                    else:
-                                        entry['locations'].append(f"Invalid site object in notice ID {notice.id}")
+                            if m in notice.members.all():
+                                sites = notice.sites
+                                if not sites:
+                                    print(f"No sites associated with notice ID {notice.id}")
+                                else:
+                                    entry['locations'].append(sites.site_name if sites else f"Invalid site object in notice ID {notice.id}")
             data.append(entry)
-        all_locations = Location.objects.all()
-        locations_data = [{'site_name': loc.site_name} for loc in all_locations]
+        all_locations = Location.objects.values('id', 'site_name', 'continent_name__continent_name')
+        locations_data = [{'site_id': loc['id'], 'site_name': loc['site_name'], 'continent': loc['continent_name__continent_name']} for loc in all_locations]
         data.append({'all_locations': locations_data})
         resp = Response(data)
         end_time = time.time()
@@ -273,17 +264,17 @@ class MemberRetrieveUpdateDestroyView(APIView):
         else:
             member.location = locations_str
         member.save()
-        ToNotice.objects.filter(members=member).delete()
+
         locations = [loc.strip() for loc in member.location.split(',') if loc.strip()]
         for location_name in locations:
             try:
                 location = Location.objects.get(site_name=location_name)
-                notice = ToNotice.objects.create(valid_till='2099-12-31')
+                notice = location.notices  # Access the existing ToNotice object for the location
                 notice.members.add(member)
-                notice.sites.add(location)
                 notice.save()
             except Location.DoesNotExist:
                 continue
+
         if data.get('role', '').lower() == 'it member':
             user, created = User.objects.get_or_create(username=member.full_name, defaults={'email': member.email})
             if created:
@@ -297,6 +288,7 @@ class MemberRetrieveUpdateDestroyView(APIView):
                 user.delete()
             except User.DoesNotExist:
                 pass
+
         serializer = ITMemberSerializer(member)
         return Response(serializer.data, status=200)
 
@@ -307,10 +299,15 @@ class MemberRetrieveUpdateDestroyView(APIView):
             user.delete()
         except User.DoesNotExist:
             pass
-        member.delete()
-        return Response({'message': 'ITMember and associated User (if any) deleted successfully'}, status=204)
-# --- End fix ---
 
+        # Remove the member from all associated ToNotice objects
+        for notice in member.notices.all():
+            notice.members.remove(member)
+            notice.save()
+
+        member.delete()
+        return Response({'message': 'ITMember and associated User (if any) deleted successfully'}, status=204) 
+    
 class MemberTestSMSView(APIView):
     def post(self, request, pk):
         return Response({'success': True})
@@ -342,19 +339,25 @@ class LocationCreateWithISPsView(APIView):
         isps = request.data.get('isps', [])
         if not all([name, continent]) or not isps or len(isps) < 2:
             return Response({'detail': 'Missing required fields or insufficient ISPs'}, status=400)
-        location = Location.objects.create(site_name=name, continent_name=continent)
+        try:
+            continent_obj = Continent.objects.get(continent_name=continent)
+        except Continent.DoesNotExist:
+            return Response({'error': 'Continent not found'}, status=404)
+        location = Location.objects.create(site_name=name, continent_name=continent_obj)
         for isp_data in isps:
             isp_name = isp_data.get('name')
             isp_ip = isp_data.get('ip')
             if not all([isp_name, isp_ip]):
                 return Response({'detail': 'Missing ISP name or IP'}, status=400)
-            isp, _ = ISP.objects.get_or_create(name=isp_name, ip_address=isp_ip)
+            isp, _ = ISP.objects.get_or_create(name=isp_name, ip_address=isp_ip, defaults={'site': location})
+            isp.site = location
+            isp.save()
             location.isps.add(isp)
         location.save()
         return Response({
             'id': location.id,
             'name': location.site_name,
-            'continent': location.continent_name,
+            'continent': location.continent_name.continent_name,
             'isps': [{'name': isp.name, 'ip': isp.ip_address} for isp in location.isps.all()]
         }, status=201)
 
@@ -386,6 +389,7 @@ class LocationDeleteWithISPsView(APIView):
         return Response({'deleted_location_id': location_id, 'deleted_isps': deleted_isps}, status=200)
         
 class LogListView(APIView):
+    
     def get(self, request):
         start_time = time.time()
         logs = Log.objects.all().order_by('-timestamp')[:50]
@@ -415,7 +419,7 @@ class LocationListView(APIView):
 class ContinentListView(APIView):
     def get(self, request):
         start_time = time.time()
-        continents = Location.objects.values_list('continent_name', flat=True).distinct()
+        continents = Continent.objects.values_list('continent_name', flat=True).distinct()
         data = [{'continent_name': continent} for continent in continents]
         resp = Response(data)
         end_time = time.time()
@@ -424,7 +428,17 @@ class ContinentListView(APIView):
     
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
-
+    def post(self, request):
+        user = request.user
+        try:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            }, status=200)
+        except Exception as e:
+            return Response({'error': 'Unable to renew token', 'details': str(e)}, status=400)
+    
     def get(self, request):
         user = request.user
         print(user)

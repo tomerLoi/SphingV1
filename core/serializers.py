@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ITMember, UserProfile, Location, ISP, ToNotice, Alert
+from .models import ITMember, UserProfile, Location, ISP, ToNotice, Alert, Continent
 from django.contrib.auth.models import User
 
 class ITMemberSerializer(serializers.ModelSerializer):
@@ -36,4 +36,9 @@ class ToNoticeSerializer(serializers.ModelSerializer):
 class AlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = Alert
+        fields = '__all__'
+
+class ContinentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Continent
         fields = '__all__'
