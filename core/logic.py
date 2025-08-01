@@ -311,7 +311,7 @@ def monitor_activity():
                 if alert:
                     time_since_alert = (timezone.now() - alert.timestamp).total_seconds() / 60
 
-                    if time_since_alert > 1:
+                    if time_since_alert > 10:
                         alert.delete()
                         location_name = location.site_name if location else 'Unknown'
                         create_log_entry(

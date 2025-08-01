@@ -5,6 +5,11 @@ import AlertsSidebar from "../Alerts/AlertsSidebar";
 import "../../assets/styles/alerts.css";
 import "../../assets/styles/navbar.css";
 
+/**
+ * Main Navbar component.
+ * All navigation is done via react-router's navigate.
+ * Now supports Sites (manage/add/edit), Members, Profile, Alerts, Logout.
+ */
 export default function Navbar({
   onLogout,
   seconds = 10,
@@ -22,8 +27,9 @@ export default function Navbar({
         </div>
         {/* All navbar buttons */}
         <div className="navbar-buttons">
-          <button className="navbar-btn" onClick={() => navigate("/add-site")}>
-            Add Site
+          {/* Main "Sites" management tab */}
+          <button className="navbar-btn" onClick={() => navigate("/site-manage")}>
+            Sites
           </button>
           <button className="navbar-btn" onClick={() => navigate("/team-members")}>
             Members
@@ -40,13 +46,15 @@ export default function Navbar({
             </span>
             Profile
           </button>
-          {/* Refresh button with countdown, calls parent callback
+          {/* Optional: Refresh button */}
+          {/*
           <button
             className="navbar-btn navbar-refresh"
             onClick={onRefreshClick}
           >
             Refresh <span className="refresh-counter">{seconds.toString().padStart(2, "0")}</span>
-          </button> */}
+          </button>
+          */}
           {/* Bell/alerts button */}
           <button className="navbar-btn navbar-bell" onClick={() => setAlertsOpen(true)}>
             <span className="bell-icon" style={{ position: "relative" }}>
